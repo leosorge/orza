@@ -14,8 +14,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 import streamlit as st
-from datetime import datetime
-from core import genera_profilo, genera_profili_da_file, formatta_profilo_testo
+from core import genera_profilo, genera_profili_da_file
 
 st.set_page_config(page_title="ORZA", layout="wide")
 st.title("♈ Sistema Astrologico ORZA")
@@ -23,39 +22,33 @@ st.title("♈ Sistema Astrologico ORZA")
 def mostra_profilo(p):
     st.markdown(f"## Profilo di {p['nome'].upper()}")
     
-    # RIGA 1
+    # Riga 1: Metriche Temporali
     c1, c2, c3 = st.columns(3)
     c1.metric("Data di nascita", p["data"].strftime("%d/%m/%Y"))
     c2.metric("Ora di nascita", p["ora"])
     c3.metric("Età", f"{p['eta']} anni")
     
-    # RIGA 2
+    # Riga 2: Metriche Astrologiche
     c4, c5 = st.columns(2)
     c4.metric("☀️ Segno Solare", p["segno"])
     c5.metric("⬆️ Ascendente", p["ascendente"])
     
-    # RIGA 3
+    # Riga 3: Contesto
     c6, c7, c8 = st.columns(3)
     c6.metric("Fase di vita", p["fase"])
     c7.metric("Casa dominante", p["casa_dominante"])
-    c8.metric("Riferimento", p["anno_max"])
+    c8.metric("Range riferimento", p["anno_rif"])
 
-    # DETTAGLIO MATCH
-    with st.expander("🔍 Dettaglio keyword match"):
-        # Ora il core e l'app si parlano attraverso match_dettagli
+    # Dettaglio Match - SINCRONIZZATO
+    with st.expander("🔍 Dettaglio keyword match (Top 3 segni)"):
         for i, (segno, score) in enumerate(p["top3_segni"], 1):
-            parole_trovate = p["match_dettagli"].get(segno, [])
-            if score > 0 or parole_trovate:
-                st.write(f"{i}. **{segno}** (Punteggio: {score})")
-                if parole_trovate:
-                    # Mostra le parole trovate
-                    txt_parole = ", ".join([f"{w} ({s})" for w, s in parole_trovate])
-                    st.write(f"&nbsp;&nbsp;&nbsp;*Parole: {txt_parole}*")
+            parole = p["match_dettagli"].get(segno, [])
+            st.write(f"{i}. **{segno}** — Totale: {score} match")
+            if parole:
+                st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;*Keyword: {', '.join([f'{w} (1.0)' for w in parole])}*")
             else:
-                # Se è il primo e non c'è match, segnalalo
-                if i == 1: st.write("Nessuna keyword specifica rilevata: assegnazione per affinità.")
+                st.write("&nbsp;&nbsp;&nbsp;&nbsp;*Nessun match diretto rilevato.*")
 
-# INTERFACCIA UTENTE
 t1, t2 = st.tabs(["👤 Singolo", "📄 Massivo"])
 
 with t1:
@@ -63,14 +56,22 @@ with t1:
         n = st.text_input("Nome e Cognome")
         col_e, col_a = st.columns(2)
         with col_e: e = st.number_input("Età", value=35)
-        with col_a: a = st.number_input("Anno", value=2026)
-        d = st.text_area("Descrizione caratteriale")
+        with col_a: a = st.number_input("Anno rif.", value=2026)
+        d = st.text_area("Descrizione")
         btn = st.form_submit_button("✨ GENERA PROFILO")
     
     if btn and n and d:
-        profilo = genera_profilo(n, e, d, a, a)
+        p = genera_profilo(n, e, d, a, a)
         st.divider()
-        mostra_profilo(profilo)
+        mostra_profilo(p)
+        
+        # Download (Sistemati)
+        st.subheader("💾 Scarica Profilo")
+        col_d1, col_d2 = st.columns(2)
+        with col_d1:
+            st.download_button("⬇️ Report Completo", f"Profilo: {p['nome']}\nData: {p['data']}\nSegno: {p['segno']}", f"{p['nome']}_full.txt")
+        with col_d2:
+            st.download_button("⬇️ Solo Nome e Data", f"{p['nome']}, {p['data'].strftime('%d/%m/%Y')}", f"{p['nome']}_data.txt")
 
 with t2:
     f = st.file_uploader("Carica file .txt")
