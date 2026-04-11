@@ -32,21 +32,39 @@ import spacy
 
 @st.cache_resource
 def load_nlp():
+    # Definiamo una cartella locale scrivibile
+    MODEL_DIR = os.path.join(os.getcwd(), "spacy_model")
     model_name = "it_core_news_md"
-    try:
-        # 1. Tenta il caricamento standard
-        return spacy.load(model_name)
-    except OSError:
-        # 2. Se manca, installiamo direttamente il pacchetto tramite l'URL ufficiale
-        with st.spinner("Inizializzazione motore semantico ORZA..."):
-            model_url = "https://github.com/explosion/spacy-models/releases/download/it_core_news_md-3.7.0/it_core_news_md-3.7.0-py3-none-any.whl"
-            # Usiamo pip install direttamente sull'URL del file .whl
-            subprocess.check_call([sys.executable, "-m", "pip", "install", model_url])
-            
-            # 3. Carichiamo il modello appena installato
-            return spacy.load(model_name)
+    
+    # 1. Tenta il caricamento dalla cartella locale se esiste
+    if os.path.exists(MODEL_DIR):
+        try:
+            return spacy.load(MODEL_DIR)
+        except:
+            pass
 
-# Inizializzazione del modulo
+    # 2. Se non esiste o fallisce, scarichiamo il file .tar.gz
+    with st.spinner("Inizializzazione motore semantico ORZA (Download una tantum)..."):
+        model_url = "https://github.com/explosion/spacy-models/releases/download/it_core_news_md-3.7.0/it_core_news_md-3.7.0.tar.gz"
+        tar_path = os.path.join(os.getcwd(), "model.tar.gz")
+        
+        # Scarichiamo il file usando curl (standard su Linux)
+        os.system(f"curl -L {model_url} -o {tar_path}")
+        
+        # Installiamo il file in una cartella locale specifica usando --target
+        subprocess.check_call([sys.executable, "-m", "pip", "install", tar_path, "--target", MODEL_DIR])
+        
+        # Pulizia: cerchiamo la cartella effettiva del modello dentro MODEL_DIR
+        # spaCy installa i modelli in MODEL_DIR/it_core_news_md/it_core_news_md-3.7.0/
+        actual_path = os.path.join(MODEL_DIR, "it_core_news_md", "it_core_news_md-3.7.0")
+        
+        # Rimuoviamo il file compresso
+        if os.path.exists(tar_path):
+            os.remove(tar_path)
+            
+        return spacy.load(actual_path)
+
+# Inizializzazione modulo
 nlp = load_nlp()
 
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
