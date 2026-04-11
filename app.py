@@ -9,11 +9,13 @@
 #
 # Avvio locale:   streamlit run app.py
 # Deploy:         share.streamlit.io → repo GitHub → file: app.py
+
+# DEVE ESSERE COSÌ - NOTA LE VIRGOLE E LE PARENTESI
 # ─────────────────────────────────────────────────────────────────────────────
 import streamlit as st
 
 # 1. PRIMISSIMA COSA: Configurazione pagina
-(
+st.set_page_config(
     page_title="ORZA",
     page_icon="🔮",
     layout="wide"
