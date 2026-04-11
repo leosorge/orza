@@ -200,11 +200,6 @@ with tab_multi:
         28
         1920
         "creativa, sognante, empatica, spirituale, a tratti sfuggente"
-        ===========================
-        Giovanni Neri
-        52
-        -
-        "ribelle, visionario, distaccato, eccentrico e indipendente"
         ```
         - **Riga 3**: `YYYY-YYYY` per un range, `YYYY` per anno fisso, `-` per usare il range globale sotto.
         """
@@ -226,7 +221,6 @@ with tab_multi:
     file_caricato = st.file_uploader("Carica il file .txt", type=["txt"])
 
     if file_caricato is not None:
-
         testo_raw = file_caricato.read().decode("utf-8")
 
         if st.button("✨ Genera tutti i profili", use_container_width=True):
@@ -242,34 +236,58 @@ with tab_multi:
             )
 
             if not profili:
-                st.error(
-                    "Nessun personaggio trovato nel file. "
-                    "Controlla il formato."
-                )
+                st.error("Nessun personaggio trovato nel file. Controlla il formato.")
             else:
                 st.success(f"Analizzati **{len(profili)}** personaggi.")
                 st.divider()
 
-                righe_output = [
-                    "PROFILI ASTROLOGICI\n"
-                    "Generati dal Sistema Astrologico Inverso\n\n"
-                ]
+                # --- PREPARAZIONE DEI DUE FORMATI DI OUTPUT ---
+                # 1. Output Completo (Dettagliato)
+                righe_full = ["PROFILI ASTROLOGICI COMPLETI\n", "Generati dal Sistema ORZA\n" + "="*30 + "\n\n"]
+                
+                # 2. Output Sintetico (Lista Nome, Data)
+                righe_short = []
 
                 for profilo in profili:
                     if "errore" in profilo:
                         st.warning(f"⚠️ {profilo['errore']}")
                     else:
+                        # Mostra a video l'anteprima grafica
                         mostra_profilo(profilo)
                         st.divider()
 
-                    righe_output.append(formatta_profilo_testo(profilo))
+                        # Aggiunge al file Dettagliato
+                        righe_full.append(formatta_profilo_testo(profilo))
+                        righe_full.append("\n" + "-"*50 + "\n") # Separatore tra personaggi nel file
 
-                testo_completo = "\n".join(righe_output)
-                nome_out = file_caricato.name.replace(".txt", "") + "-astro.txt"
-                st.download_button(
-                    label               = "⬇️ Scarica tutti i profili (.txt)",
-                    data                = testo_completo,
-                    file_name           = nome_out,
-                    mime                = "text/plain",
-                    use_container_width = True,
-                )
+                        # Aggiunge al file Lista (Nome, GG/MM/AAAA)
+                        data_f = profilo["data"].strftime("%d/%m/%Y")
+                        righe_short.append(f"{profilo['nome']}, {data_f}")
+
+                # Unione delle righe in stringhe finali
+                testo_completo = "\n".join(righe_full)
+                testo_lista = "\n".join(righe_short)
+
+                # --- SEZIONE DOWNLOAD ---
+                st.subheader("💾 Scarica i risultati")
+                col_d1, col_d2 = st.columns(2)
+                
+                nome_base = file_caricato.name.replace(".txt", "")
+
+                with col_d1:
+                    st.download_button(
+                        label="⬇️ Scarica Profili Completi (.txt)",
+                        data=testo_completo,
+                        file_name=f"{nome_base}_DETTAGLIATO.txt",
+                        mime="text/plain",
+                        use_container_width=True,
+                    )
+
+                with col_d2:
+                    st.download_button(
+                        label="⬇️ Scarica Lista Sintetica (.txt)",
+                        data=testo_lista,
+                        file_name=f"{nome_base}_LISTA_DATE.txt",
+                        mime="text/plain",
+                        use_container_width=True,
+                    )
