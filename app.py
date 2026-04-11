@@ -10,12 +10,18 @@
 # Avvio locale:   streamlit run app.py
 # Deploy:         share.streamlit.io → repo GitHub → file: app.py
 # ─────────────────────────────────────────────────────────────────────────────
-
 import streamlit as st
+
+# 1. QUESTA DEVE ESSERE LA PRIMA ISTRUZIONE OPERATIVA
+st.set_page_config(
+    page_title="ORZA - Analisi Semantica",
+    page_icon="🔮",
+    layout="wide"
+)
 from datetime import datetime
+from core import genera_profilo, genera_profili_da_file, formatta_profilo_testo, nlp
 
-from core import genera_profilo, genera_profili_da_file, formatta_profilo_testo
-
+st.title("Sistema ORZA")
 
 # ── CONFIGURAZIONE PAGINA ─────────────────────────────────────────────────────
 
