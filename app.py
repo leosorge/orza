@@ -146,13 +146,7 @@ with tab1:
         )
         d2.download_button(
             "⬇️ Riga per database",
-            data      = (
-                f"{profilo['nome']}, "
-                f"{profilo['data'].strftime('%d/%m/%Y')}, "
-                f"{profilo['segno']}, "
-                f"{profilo['ascendente']}, "
-                f"{profilo['anno_rif']}"
-            ),
+            data      = f"{profilo['nome']}, {profilo['data'].strftime('%d/%m/%Y')}",
             file_name = f"{nome_safe}_data.txt",
             mime      = "text/plain",
         )
