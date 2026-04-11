@@ -27,9 +27,10 @@ st.set_page_config(
 
 st.title("♈ Sistema Astrologico Inverso")
 st.caption(
-    "Genera una data di nascita astrologicamente coerente "
-    "a partire dalla descrizione del carattere, dall'età "
-    "e dal periodo storico di riferimento."
+    "Genera una data di nascita astrologicamente coerente a partire dalla "
+    "descrizione del carattere, dall'età e dal periodo storico di riferimento. "
+    "— Esempio: *età 34, range 1880–1910, \"intensa, misteriosa, tenace\"* "
+    "→ Scorpione, nata il 14/11/1861."
 )
 st.divider()
 
