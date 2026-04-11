@@ -32,13 +32,17 @@ import spacy
 def load_nlp():
     model_name = "it_core_news_md"
     try:
+        # Tenta il caricamento standard
         return spacy.load(model_name)
     except OSError:
-        # Scarica solo se non esiste, poi carica
-        with st.spinner("Inizializzazione motore semantico ORZA... attendere."):
+        # Se fallisce, scarica e forza l'importazione
+        with st.spinner("Inizializzazione motore semantico..."):
             os.system(f"python -m spacy download {model_name}")
-            return spacy.load(model_name)
+            # Importa direttamente il modulo appena scaricato
+            import it_core_news_md
+            return it_core_news_md.load()
 
+# Inizializzazione
 nlp = load_nlp()
 
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
