@@ -12,11 +12,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 import streamlit as st
 
-# 1. QUESTA DEVE ESSERE LA PRIMA ISTRUZIONE OPERATIVA
 st.set_page_config(
-    page_title="ORZA - Analisi Semantica",
-    page_icon="🔮",
+    page_title="ORZA",
     layout="wide"
+)
+
 )
 from datetime import datetime
 from core import genera_profilo, genera_profili_da_file, formatta_profilo_testo, nlp
