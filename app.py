@@ -15,7 +15,7 @@
 import streamlit as st
 from datetime import datetime
 
-# 1. CONFIGURAZIONE DELLA PAGINA (Deve essere la prima istruzione Streamlit)
+# 1. CONFIGURAZIONE DELLA PAGINA
 st.set_page_config(
     page_title="ORZA",
     page_icon="🔮",
@@ -23,7 +23,6 @@ st.set_page_config(
 )
 
 # 2. IMPORTAZIONE LOGICA DAL CORE
-# Assicurati che core.py e i modelli spaCy siano presenti
 from core import genera_profilo, genera_profili_da_file, formatta_profilo_testo, nlp
 
 # --- TITOLO E DESCRIZIONE ---
@@ -58,9 +57,23 @@ def mostra_profilo(profilo: dict):
     col_g.metric("Casa dominante", profilo["casa_dominante"])
     col_h.metric("Range riferimento", range_label)
 
-    with st.expander("🔍 Dettaglio keyword match"):
+    # SEZIONE KEYWORD MATCH AGGIORNATA
+    with st.expander("🔍 Dettaglio keyword match (Top 3 segni)"):
+        # Mostriamo i primi 3 segni identificati
         for i, (segno_k, punteggio) in enumerate(profilo["top3_segni"], 1):
-            st.write(f"{i}. **{segno_k}** — {punteggio} keyword")
+            # Recuperiamo le parole specifiche che hanno causato il match per quel segno
+            # Nota: Assumiamo che il dizionario 'match_dettagli' sia presente nel profilo generato dal core
+            dettagli = profilo.get("match_dettagli", {}).get(segno_k, [])
+            
+            # Prendiamo le prime 3 parole per valore statistico (già ordinate dal core)
+            top_words = dettagli[:3]
+            keyword_str = ", ".join([f"{parola} ({score})" for parola, score in top_words])
+            
+            st.write(f"{i}. **{segno_k}** — Totale: {punteggio} match")
+            if keyword_str:
+                st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;*Principali: {keyword_str}*")
+            else:
+                st.write("&nbsp;&nbsp;&nbsp;&nbsp;*Nessuna keyword specifica trovata.*")
 
 # ── LAYOUT A SCHEDE (TAB) ─────────────────────────────────────────────────────
 tab_singolo, tab_multi = st.tabs(["👤 Personaggio singolo", "📄 File multipli"])
@@ -90,14 +103,10 @@ with tab_singolo:
         if not nome.strip() or not descrizione.strip():
             st.warning("Inserisci nome e descrizione.")
         else:
-            # Generazione
             p = genera_profilo(nome.strip(), int(eta), descrizione.strip(), int(anno_min), int(anno_max))
-            
-            # Visualizzazione
             st.divider()
             mostra_profilo(p)
 
-            # Preparazione download
             testo_full = formatta_profilo_testo(p)
             testo_short = f"{p['nome']}, {p['data'].strftime('%d/%m/%Y')}"
 
