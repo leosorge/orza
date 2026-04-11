@@ -27,47 +27,42 @@ import spacy
 # Il modello "lg" (large) è necessario per avere i vettori di similarità
 try:
     nlp = spacy.load("it_core_news_lg")
-except OSError:
-    # Fallback per evitare crash se il modello non è installato localmente
-    st.error("Modello spaCy 'it_core_news_lg' non trovato.")
-
+except:
+    nlp = None
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
 
 def segno_da_descrizione(descrizione: str) -> tuple[str, list]:
     """
-    Analizza la descrizione usando spaCy per calcolare la similarità 
-    semantica tra il testo e i tratti distintivi dei segni.
+    Analisi semantica vettoriale tramite spaCy.
+    Confronta il 'vettore' della descrizione con i vettori dei tratti zodiacali.
     """
-    # Trasformiamo la descrizione in un oggetto Doc di spaCy
+    if nlp is None:
+        # Fallback se il modello non è caricato (evita crash in deploy)
+        return random.choice(list(TRATTI_SEGNI.keys())), [("Errore Modello", 0)]
+
     doc_desc = nlp(descrizione.lower())
     punteggi = {s: 0.0 for s in TRATTI_SEGNI}
 
     for segno, tratti in TRATTI_SEGNI.items():
-        score_segno = 0.0
+        score_totale = 0.0
         for tratto in tratti:
-            # Creiamo il vettore per il tratto (es. "misterioso")
             token_tratto = nlp(tratto)
-            
-            # Calcolo della similarità tra l'intera descrizione e la keyword
-            # .similarity restituisce un valore tra 0 e 1
+            # Calcolo similarità del coseno tra vettori
             sim = doc_desc.similarity(token_tratto)
             
-            # Usiamo una soglia di attivazione: se la similarità è alta,
-            # aggiungiamo il valore al punteggio del segno
-            if sim > 0.6: 
-                score_segno += sim
+            # Soglia Zorge: solo affinità superiori al 60%
+            if sim > 0.60:
+                score_totale += sim
         
-        punteggi[segno] = round(score_segno, 2)
+        punteggi[segno] = round(score_totale, 2)
 
-    # Classifica i segni per punteggio
+    # Ordinamento per rilevanza
     top3 = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)[:3]
 
-    # Se il punteggio massimo è troppo basso (nessun match semantico utile)
-    # manteniamo il fallback casuale
-    if max(punteggi.values()) < 0.1:
+    # Se il match è troppo debole, usiamo il caso (entropia controllata)
+    if top3[0][1] < 0.1:
         return random.choice(list(TRATTI_SEGNI.keys())), top3
 
-    # Restituisce il segno con il punteggio più alto
     return top3[0][0], top3
 
 # ── 2. DATA DI NASCITA ────────────────────────────────────────────────────────
