@@ -19,7 +19,9 @@ from __future__ import annotations  # compatibilità type hint su Python 3.7–3
 import os
 import re
 import random
-import streamlit as st  # <--- MANCAVA QUESTO
+import sys
+import subprocess
+import streamlit as st 
 from datetime import datetime, date, timedelta
 from typing import Optional
 from database import TRATTI_SEGNI, FINESTRE_SEGNI
@@ -32,14 +34,17 @@ import spacy
 def load_nlp():
     model_name = "it_core_news_md"
     try:
-        # Tenta il caricamento standard
+        # 1. Tenta il caricamento standard
         return spacy.load(model_name)
     except OSError:
-        # Se fallisce, scarica e forza l'importazione
-        with st.spinner("Inizializzazione motore semantico..."):
-            os.system(f"python -m spacy download {model_name}")
-            # Importa direttamente il modulo appena scaricato
+        # 2. Se fallisce, scarica usando l'eseguibile Python corrente
+        with st.spinner("Configurazione inizializzazione ORZA..."):
+            subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
+            
+            # 3. Forza il ricaricamento dei pacchetti per vedere il nuovo modello
+            import importlib
             import it_core_news_md
+            importlib.reload(it_core_news_md)
             return it_core_news_md.load()
 
 # Inizializzazione
