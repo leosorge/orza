@@ -33,14 +33,6 @@ st.title("Sistema ORZA")
 if st.button("Verifica Motore"):
     st.write(f"Modello caricato: {nlp.meta['name']}")
 
-# ── CONFIGURAZIONE PAGINA ─────────────────────────────────────────────────────
-
-st.set_page_config(
-    page_title="Sistema Astrologico Inverso",
-    page_icon="♈",
-    layout="centered",
-)
-
 st.title("♈ Sistema Astrologico Inverso")
 st.caption(
     "Genera una data di nascita astrologicamente coerente a partire dalla "
