@@ -184,69 +184,66 @@ with tab_singolo:
 # ════════════════════════════════════════════════════════════════════════════
 
 with tab_multi:
-    file_caricato = st.file_uploader("Carica il file .txt", type=["txt"], key="multi_uploader")
+    st.markdown("### 📄 Caricamento Multiplo")
+    st.info("Formato atteso: Nome, Età, Anno, Descrizione separati da === (vedi esempio nel Tab 1)")
 
-    if file_caricato is not None:
+    # 1. Range globale come fallback
+    col_g1, col_g2 = st.columns(2)
+    with col_g1:
+        anno_min_glob = st.number_input("Anno Min Globale", value=2000, key="min_g")
+    with col_g2:
+        anno_max_glob = st.number_input("Anno Max Globale", value=2026, key="max_g")
+
+    # 2. Uploader
+    file_caricato = st.file_uploader("Carica il file .txt", type=["txt"], key="uploader_bulk")
+
+    if file_caricato:
         testo_raw = file_caricato.read().decode("utf-8")
-
-        # Bottone per avviare il calcolo
-        if st.button("✨ Genera tutti i profili", use_container_width=True):
-            if anno_min_glob > anno_max_glob:
-                st.warning("Il range globale non è valido.")
-                st.stop()
-
-            # Salviamo i risultati nello stato della sessione
-            st.session_state.profili_generati = genera_profili_da_file(
-                testo_raw,
-                anno_min_default=int(anno_min_glob),
-                anno_max_default=int(anno_max_glob),
+        
+        if st.button("✨ Avvia Elaborazione Massiva", use_container_width=True):
+            # Eseguiamo il calcolo e salviamo subito nello stato
+            risultati = genera_profili_da_file(
+                testo_raw, 
+                anno_min_default=int(anno_min_glob), 
+                anno_max_default=int(anno_max_glob)
             )
-            st.success(f"Analizzati **{len(st.session_state.profili_generati)}** personaggi.")
+            st.session_state['risultati_orza'] = risultati
+            st.success(f"Elaborati {len(risultati)} personaggi!")
 
-        # Se i profili sono stati generati, mostriamo i risultati e i tasti di download
-        if "profili_generati" in st.session_state and st.session_state.profili_generati:
-            profili = st.session_state.profili_generati
+        # 3. Se abbiamo risultati in memoria, mostriamo i download
+        if 'risultati_orza' in st.session_state:
+            res = st.session_state['risultati_orza']
             
-            # --- PREPARAZIONE OUTPUT ---
-            righe_full = ["PROFILI ASTROLOGICI COMPLETI\n", "="*30 + "\n\n"]
-            righe_short = []
-
-            for profilo in profili:
-                if "errore" in profilo:
-                    st.warning(f"⚠️ {profilo['errore']}")
-                else:
-                    mostra_profilo(profilo)
-                    st.divider()
-                    righe_full.append(formatta_profilo_testo(profilo))
-                    righe_full.append("\n" + "-"*50 + "\n")
-                    
-                    data_f = profilo["data"].strftime("%d/%m/%Y")
-                    righe_short.append(f"{profilo['nome']}, {data_f}")
-
-            testo_completo = "\n".join(righe_full)
-            testo_lista = "\n".join(righe_short)
-
-            # --- I DUE TASTI DI DOWNLOAD (Sempre visibili dopo la generazione) ---
-            st.subheader("💾 Scarica i risultati")
-            col_d1, col_d2 = st.columns(2)
-            nome_base = file_caricato.name.replace(".txt", "")
-
-            with col_d1:
+            # Prepariamo i due testi
+            output_full = ""
+            output_lista = ""
+            
+            for p in res:
+                if "errore" not in p:
+                    # File 1: Dettagliato
+                    output_full += formatta_profilo_testo(p) + "\n" + "-"*40 + "\n"
+                    # File 2: Sintetico (Nome, Data)
+                    data_formattata = p["data"].strftime("%d/%m/%Y")
+                    output_lista += f"{p['nome']}, {data_formattata}\n"
+            
+            st.divider()
+            st.subheader("💾 Download Risultati")
+            
+            c1, c2 = st.columns(2)
+            with c1:
                 st.download_button(
                     label="⬇️ Scarica Profili Completi",
-                    data=testo_completo,
-                    file_name=f"{nome_base}_DETTAGLIATO.txt",
+                    data=output_full,
+                    file_name="ORZA_completo.txt",
                     mime="text/plain",
-                    use_container_width=True,
-                    key="btn_full"
+                    key="dl_full"
                 )
-
-            with col_d2:
+            with c2:
+                # Questo è il tasto che ci interessa
                 st.download_button(
-                    label="⬇️ Scarica Lista Sintetica",
-                    data=testo_lista,
-                    file_name=f"{nome_base}_LISTA_DATE.txt",
+                    label="⬇️ Scarica Lista (Nome, Data)",
+                    data=output_lista,
+                    file_name="ORZA_lista_date.txt",
                     mime="text/plain",
-                    use_container_width=True,
-                    key="btn_short"
+                    key="dl_short"
                 )
