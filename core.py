@@ -24,7 +24,6 @@ try:
 except:
     nlp = None
 
-# Dizionario semplificato
 DIZIONARIO_SEGNI = {
     "Ariete": ["coraggioso", "impulsivo", "energico", "diretto", "impaziente", "audace", "combattivo"],
     "Toro": ["paziente", "ostinato", "sensuale", "concreto", "leale", "possessivo", "calmo"],
@@ -44,47 +43,46 @@ def analizza_descrizione(testo):
     if not nlp: return [("Neutro", 0)], {}
     doc = nlp(testo.lower())
     punteggi = {s: 0 for s in DIZIONARIO_SEGNI}
-    dettagli = {s: [] for s in DIZIONARIO_SEGNI}
+    match_parole = {s: [] for s in DIZIONARIO_SEGNI}
 
     for token in doc:
-        t_low = token.text.lower()
-        l_low = token.lemma_.lower()
+        t, l = token.text.lower(), token.lemma_.lower()
         for segno, keywords in DIZIONARIO_SEGNI.items():
-            if t_low in keywords or l_low in keywords:
+            if t in keywords or l in keywords:
                 punteggi[segno] += 1
-                if t_low not in dettagli[segno]:
-                    dettagli[segno].append(t_low)
+                if t not in [x[0] for x in match_parole[segno]]:
+                    match_parole[segno].append((t, 1.0)) # Peso statistico base
     
-    # Prende i top 3
+    # Ordiniamo e prendiamo i top 3
     top3 = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)[:3]
-    # Crea la stringa statistica per l'app
-    stat_per_app = {}
-    for s, p in top3:
-        # Se ci sono parole, crea la lista formattata (parola (1.0))
-        parole_formattate = ", ".join([f"{w} (1.0)" for w in dettagli[s][:3]])
-        stat_per_app[s] = parole_formattate if parole_formattate else "Nessun match diretto"
-        
-    return top3, stat_per_app
+    return top3, match_parole
 
-def genera_profilo(nome, eta, descrizione, anno_min, anno_max):
+def genera_profilo(nome, eta, descrizione, a_min, a_max):
     top3, dettagli = analizza_descrizione(descrizione)
-    anno_n = random.randint(anno_min - eta, anno_max - eta)
+    
+    # Calcolo data
+    anno_n = random.randint(a_min - eta, a_max - eta)
     data_n = datetime(anno_n, random.randint(1,12), random.randint(1,28))
     
+    # Liste per varietà estetica
+    ascendenti = list(DIZIONARIO_SEGNI.keys())
+    fasi = ["Giovinezza", "Maturità", "Luna Piena", "Luna Nuova", "Primo Quarto"]
+    case = [f"{n}ª Casa" for n in ["Prima", "Seconda", "Terza", "Quarta", "Quinta", "Sesta", "Settima"]]
+
     return {
         "nome": nome, "eta": eta, "descrizione": descrizione,
-        "anno_min": anno_min, "anno_max": anno_max,
+        "anno_min": a_min, "anno_max": a_max,
         "data": data_n, "ora": f"{random.randint(0,23):02d}:{random.randint(0,59):02d}",
-        "segno": top3[0][0] if top3[0][1] > 0 else "Pesci",
-        "ascendente": random.choice(list(DIZIONARIO_SEGNI.keys())),
-        "fase": random.choice(["Luna Piena", "Luna Nuova", "Crescente", "Calante"]),
-        "casa_dominante": f"Casa {random.randint(1,12)}",
+        "segno": top3[0][0] if top3[0][1] > 0 else random.choice(ascendenti),
+        "ascendente": random.choice(ascendenti),
+        "fase": random.choice(fasi),
+        "casa_dominante": random.choice(case),
         "top3_segni": top3,
         "match_dettagli": dettagli
     }
 
 def formatta_profilo_testo(p):
-    return f"PROFILO: {p['nome']}\nData: {p['data'].strftime('%d/%m/%Y')}\nSegno: {p['segno']}\n"
+    return f"PROFILO ASTROLOGICO: {p['nome'].upper()}\nData: {p['data'].strftime('%d/%m/%Y')}\nSegno: {p['segno']}\n"
 
 def genera_profili_da_file(testo, a1, a2):
     res = []
