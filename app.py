@@ -133,6 +133,17 @@ with tab_singolo:
             "✨ Genera profilo", use_container_width=True
         )
 
+# --- QUESTO È FUORI DAL FORM ---
+    st.write("---") # Una linea sottile di separazione
+    st.markdown("### 💡 Esempio di Input")
+    st.code(
+        "Elena Voss\n"
+        "34\n"
+        "1880–1910\n"
+        "persona intensa, misteriosa, determinata e tenace, con un lato oscuro e passionale",
+        language="text"
+    )
+    
     if inviato:
         if not nome.strip():
             st.warning("Inserisci il nome del personaggio.")
