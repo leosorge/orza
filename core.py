@@ -32,40 +32,40 @@ import spacy
 
 @st.cache_resource
 def load_nlp():
-    # Definiamo una cartella locale scrivibile
-    MODEL_DIR = os.path.join(os.getcwd(), "spacy_model")
+    # Definiamo una sottocartella locale per il modello
+    LOCAL_MODEL_PATH = os.path.join(os.getcwd(), "local_spacy_model")
     model_name = "it_core_news_md"
     
-    # 1. Tenta il caricamento dalla cartella locale se esiste
-    if os.path.exists(MODEL_DIR):
+    # 1. Tenta il caricamento se la cartella locale esiste già
+    if os.path.exists(LOCAL_MODEL_PATH):
         try:
-            return spacy.load(MODEL_DIR)
+            # Cerchiamo la cartella effettiva del pacchetto dentro la destinazione
+            # Pip install --target crea una struttura nidificata
+            potential_path = os.path.join(LOCAL_MODEL_PATH, "it_core_news_md", "it_core_news_md-3.7.0")
+            if os.path.exists(potential_path):
+                return spacy.load(potential_path)
+            return spacy.load(LOCAL_MODEL_PATH)
         except:
             pass
 
-    # 2. Se non esiste o fallisce, scarichiamo il file .tar.gz
+    # 2. Se non esiste, scarichiamo e installiamo LOCALMENTE
     with st.spinner("Inizializzazione motore semantico ORZA (Download una tantum)..."):
-        model_url = "https://github.com/explosion/spacy-models/releases/download/it_core_news_md-3.7.0/it_core_news_md-3.7.0.tar.gz"
-        tar_path = os.path.join(os.getcwd(), "model.tar.gz")
+        model_url = "https://github.com/explosion/spacy-models/releases/download/it_core_news_md-3.7.0/it_core_news_md-3.7.0-py3-none-any.whl"
         
-        # Scarichiamo il file usando curl (standard su Linux)
-        os.system(f"curl -L {model_url} -o {tar_path}")
+        # Usiamo --target per installare nella nostra cartella locale
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", 
+            model_url, 
+            "--target", LOCAL_MODEL_PATH
+        ])
         
-        # Installiamo il file in una cartella locale specifica usando --target
-        subprocess.check_call([sys.executable, "-m", "pip", "install", tar_path, "--target", MODEL_DIR])
-        
-        # Pulizia: cerchiamo la cartella effettiva del modello dentro MODEL_DIR
-        # spaCy installa i modelli in MODEL_DIR/it_core_news_md/it_core_news_md-3.7.0/
-        actual_path = os.path.join(MODEL_DIR, "it_core_news_md", "it_core_news_md-3.7.0")
-        
-        # Rimuoviamo il file compresso
-        if os.path.exists(tar_path):
-            os.remove(tar_path)
-            
-        return spacy.load(actual_path)
+        # Percorso dove pip ha scompattato il modello
+        actual_model_dir = os.path.join(LOCAL_MODEL_PATH, "it_core_news_md", "it_core_news_md-3.7.0")
+        return spacy.load(actual_model_dir)
 
-# Inizializzazione modulo
+# Inizializzazione globale
 nlp = load_nlp()
+
 
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
 
