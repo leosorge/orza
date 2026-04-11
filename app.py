@@ -12,16 +12,24 @@
 # ─────────────────────────────────────────────────────────────────────────────
 import streamlit as st
 
+# 1. PRIMISSIMA COSA: Configurazione pagina
 st.set_page_config(
     page_title="ORZA",
+    page_icon="🔮",
     layout="wide"
 )
 
-)
+# 2. ALTRI IMPORT (opzionali)
 from datetime import datetime
+
+# 3. IMPORTA TUTTO DA CORE (Incluso nlp)
+# Mettendolo qui, st.set_page_config ha già "vinto" la gara di precedenza.
 from core import genera_profilo, genera_profili_da_file, formatta_profilo_testo, nlp
 
+# 4. ORA PUOI USARE NLP NELL'INTERFACCIA
 st.title("Sistema ORZA")
+if st.button("Verifica Motore"):
+    st.write(f"Modello caricato: {nlp.meta['name']}")
 
 # ── CONFIGURAZIONE PAGINA ─────────────────────────────────────────────────────
 
