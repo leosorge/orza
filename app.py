@@ -184,110 +184,69 @@ with tab_singolo:
 # ════════════════════════════════════════════════════════════════════════════
 
 with tab_multi:
-
-    st.markdown(
-        """
-        Carica un file `.txt` con la descrizione di più personaggi.
-
-        **Formato atteso** — 4 righe per blocco, separati da `===`:
-        ```
-        Marco Rossi
-        35
-        1850-1880
-        "determinato, ambizioso, disciplinato, freddo ma perseverante"
-        ===========================
-        Lucia Ferretti
-        28
-        1920
-        "creativa, sognante, empatica, spirituale, a tratti sfuggente"
-        ```
-        - **Riga 3**: `YYYY-YYYY` per un range, `YYYY` per anno fisso, `-` per usare il range globale sotto.
-        """
-    )
-
-    st.markdown("**Range anni globale** (usato per i blocchi che hanno `-` alla riga 3):")
-    col_g1, col_g2 = st.columns(2)
-    with col_g1:
-        anno_min_glob = st.number_input(
-            "Da (YYYY)", min_value=1, max_value=9999,
-            value=datetime.now().year, step=1, key="anno_min_g",
-        )
-    with col_g2:
-        anno_max_glob = st.number_input(
-            "A (YYYY)", min_value=1, max_value=9999,
-            value=datetime.now().year, step=1, key="anno_max_g",
-        )
-
-    file_caricato = st.file_uploader("Carica il file .txt", type=["txt"])
+file_caricato = st.file_uploader("Carica il file .txt", type=["txt"], key="multi_uploader")
 
     if file_caricato is not None:
         testo_raw = file_caricato.read().decode("utf-8")
 
+        # Bottone per avviare il calcolo
         if st.button("✨ Genera tutti i profili", use_container_width=True):
-
             if anno_min_glob > anno_max_glob:
-                st.warning("Il range globale non è valido (anno iniziale > anno finale).")
+                st.warning("Il range globale non è valido.")
                 st.stop()
 
-            profili = genera_profili_da_file(
+            # Salviamo i risultati nello stato della sessione
+            st.session_state.profili_generati = genera_profili_da_file(
                 testo_raw,
-                anno_min_default = int(anno_min_glob),
-                anno_max_default = int(anno_max_glob),
+                anno_min_default=int(anno_min_glob),
+                anno_max_default=int(anno_max_glob),
             )
+            st.success(f"Analizzati **{len(st.session_state.profili_generati)}** personaggi.")
 
-            if not profili:
-                st.error("Nessun personaggio trovato nel file. Controlla il formato.")
-            else:
-                st.success(f"Analizzati **{len(profili)}** personaggi.")
-                st.divider()
+        # Se i profili sono stati generati, mostriamo i risultati e i tasti di download
+        if "profili_generati" in st.session_state and st.session_state.profili_generati:
+            profili = st.session_state.profili_generati
+            
+            # --- PREPARAZIONE OUTPUT ---
+            righe_full = ["PROFILI ASTROLOGICI COMPLETI\n", "="*30 + "\n\n"]
+            righe_short = []
 
-                # --- PREPARAZIONE DEI DUE FORMATI DI OUTPUT ---
-                # 1. Output Completo (Dettagliato)
-                righe_full = ["PROFILI ASTROLOGICI COMPLETI\n", "Generati dal Sistema ORZA\n" + "="*30 + "\n\n"]
-                
-                # 2. Output Sintetico (Lista Nome, Data)
-                righe_short = []
+            for profilo in profili:
+                if "errore" in profilo:
+                    st.warning(f"⚠️ {profilo['errore']}")
+                else:
+                    mostra_profilo(profilo)
+                    st.divider()
+                    righe_full.append(formatta_profilo_testo(profilo))
+                    righe_full.append("\n" + "-"*50 + "\n")
+                    
+                    data_f = profilo["data"].strftime("%d/%m/%Y")
+                    righe_short.append(f"{profilo['nome']}, {data_f}")
 
-                for profilo in profili:
-                    if "errore" in profilo:
-                        st.warning(f"⚠️ {profilo['errore']}")
-                    else:
-                        # Mostra a video l'anteprima grafica
-                        mostra_profilo(profilo)
-                        st.divider()
+            testo_completo = "\n".join(righe_full)
+            testo_lista = "\n".join(righe_short)
 
-                        # Aggiunge al file Dettagliato
-                        righe_full.append(formatta_profilo_testo(profilo))
-                        righe_full.append("\n" + "-"*50 + "\n") # Separatore tra personaggi nel file
+            # --- I DUE TASTI DI DOWNLOAD (Sempre visibili dopo la generazione) ---
+            st.subheader("💾 Scarica i risultati")
+            col_d1, col_d2 = st.columns(2)
+            nome_base = file_caricato.name.replace(".txt", "")
 
-                        # Aggiunge al file Lista (Nome, GG/MM/AAAA)
-                        data_f = profilo["data"].strftime("%d/%m/%Y")
-                        righe_short.append(f"{profilo['nome']}, {data_f}")
+            with col_d1:
+                st.download_button(
+                    label="⬇️ Scarica Profili Completi",
+                    data=testo_completo,
+                    file_name=f"{nome_base}_DETTAGLIATO.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="btn_full"
+                )
 
-                # Unione delle righe in stringhe finali
-                testo_completo = "\n".join(righe_full)
-                testo_lista = "\n".join(righe_short)
-
-                # --- SEZIONE DOWNLOAD ---
-                st.subheader("💾 Scarica i risultati")
-                col_d1, col_d2 = st.columns(2)
-                
-                nome_base = file_caricato.name.replace(".txt", "")
-
-                with col_d1:
-                    st.download_button(
-                        label="⬇️ Scarica Profili Completi (.txt)",
-                        data=testo_completo,
-                        file_name=f"{nome_base}_DETTAGLIATO.txt",
-                        mime="text/plain",
-                        use_container_width=True,
-                    )
-
-                with col_d2:
-                    st.download_button(
-                        label="⬇️ Scarica Lista Sintetica (.txt)",
-                        data=testo_lista,
-                        file_name=f"{nome_base}_LISTA_DATE.txt",
-                        mime="text/plain",
-                        use_container_width=True,
-                    )
+            with col_d2:
+                st.download_button(
+                    label="⬇️ Scarica Lista Sintetica",
+                    data=testo_lista,
+                    file_name=f"{nome_base}_LISTA_DATE.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="btn_short"
+                )
