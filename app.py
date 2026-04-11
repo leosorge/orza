@@ -184,7 +184,7 @@ with tab_singolo:
 # ════════════════════════════════════════════════════════════════════════════
 
 with tab_multi:
-file_caricato = st.file_uploader("Carica il file .txt", type=["txt"], key="multi_uploader")
+    file_caricato = st.file_uploader("Carica il file .txt", type=["txt"], key="multi_uploader")
 
     if file_caricato is not None:
         testo_raw = file_caricato.read().decode("utf-8")
