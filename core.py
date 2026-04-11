@@ -27,17 +27,19 @@ import spacy
 # Caricamento del modello medium (assicurati di averlo scaricato)
 # Il modello "md" (medium) ha i vettori di similarità e pesa 40MB e non 500MB
 
-@st.cache_resource # Evita di ricaricare il modello a ogni interazione
+@st.cache_resource
 def load_nlp():
+    model_name = "it_core_news_md"
     try:
-        # Tenta di caricare il modello
-        return spacy.load("it_core_news_md")
+        return spacy.load(model_name)
     except OSError:
-        # Se non lo trova, lo scarica al volo
-        os.system("python -m spacy download it_core_news_md")
-        return spacy.load("it_core_news_md")
+        # Scarica solo se non esiste, poi carica
+        with st.spinner("Inizializzazione motore semantico ORZA... attendere."):
+            os.system(f"python -m spacy download {model_name}")
+            return spacy.load(model_name)
 
 nlp = load_nlp()
+
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
 
 def segno_da_descrizione(descrizione: str) -> tuple[str, list]:
