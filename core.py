@@ -252,22 +252,23 @@ def parse_file_multiplo(testo: str) -> list[dict]:
     Legge un file .txt contenente la descrizione di più personaggi e
     restituisce una lista di dizionari pronti per genera_profilo().
 
-    Formato atteso per ogni personaggio (blocchi separati da '===…==='):
+    Formato atteso — 4 righe per personaggio:
     ──────────────────────────────────────────────────────────────────
     Nome Cognome
     35
     1850-1880
-    "descrizione libera del carattere, anche su più righe"
+    descrizione libera del carattere
     ──────────────────────────────────────────────────────────────────
     - Riga 1 : nome
     - Riga 2 : età (intero)
-    - Riga 3 : range anni nel formato YYYY-YYYY  (es. 1850-1880)
-               oppure anno singolo YYYY           (es. 1865)
-               oppure "-" / vuoto per usare l'anno reale corrente
-    - Righe 4+: descrizione (le virgolette doppie sono opzionali)
+    - Riga 3 : range anni: YYYY-YYYY, YYYY singolo, o "-" per default
+    - Riga 4+: descrizione (virgolette doppie opzionali)
 
-    I blocchi possono essere separati da una riga di '=' (≥10 caratteri)
-    oppure da due o più righe vuote consecutive.
+    Separatori accettati (tutti equivalenti):
+    - Riga di "=" (≥10 caratteri)
+    - Due o più righe vuote consecutive
+    - Nessun separatore: il parser rileva automaticamente i blocchi da 4
+      righe consecutive (formato compatto, una riga vuota tra blocchi)
 
     Parametri
     ---------
@@ -278,15 +279,65 @@ def parse_file_multiplo(testo: str) -> list[dict]:
     list[dict] con chiavi: nome, eta, anno_min, anno_max, descrizione
                 e 'errore' (str) se il blocco non è parsabile
     """
-    blocchi_raw = re.split(r'={10,}|\n\s*\n\s*\n+', testo)
 
+    # ── Strategia 1: separatore esplicito === o doppia riga vuota ────────────
+    if re.search(r'={10,}|\n\s*\n\s*\n', testo):
+        blocchi_raw = re.split(r'={10,}|\n\s*\n\s*\n+', testo)
+        return _parse_blocchi(blocchi_raw)
+
+    # ── Strategia 2: formato compatto — 4 righe per blocco ───────────────────
+    # Rimuove righe vuote e raggruppa in blocchi da 4 righe non vuote.
+    # Funziona anche se c'è una singola riga vuota tra i personaggi.
+    righe_non_vuote = [r.strip() for r in testo.splitlines() if r.strip()]
+
+    # Verifica che il totale sia multiplo di 4; se no, prova comunque
+    # a estrarre quanti blocchi completi sono possibili.
+    personaggi = []
+    i = 0
+    while i + 3 < len(righe_non_vuote):
+        nome_c = righe_non_vuote[i]
+        riga_eta = righe_non_vuote[i + 1]
+        riga_range = righe_non_vuote[i + 2]
+
+        # Verifica che riga 2 sia un'età valida e riga 3 un range valido,
+        # altrimenti il blocco potrebbe essere disallineato — segnala errore.
+        try:
+            eta_c = int(riga_eta)
+        except ValueError:
+            personaggi.append({
+                "errore": f"Età non riconosciuta per «{nome_c}»: «{riga_eta}»"
+            })
+            i += 1  # avanza di una riga e riprova
+            continue
+
+        anno_min_c, anno_max_c = _parse_range_anni(riga_range)
+
+        # Riga 4: descrizione (una sola riga nel formato compatto)
+        desc_c = righe_non_vuote[i + 3].strip('"').strip()
+
+        personaggi.append({
+            "nome":        nome_c,
+            "eta":         eta_c,
+            "anno_min":    anno_min_c,
+            "anno_max":    anno_max_c,
+            "descrizione": desc_c,
+        })
+        i += 4  # avanza al prossimo blocco
+
+    return personaggi
+
+
+def _parse_blocchi(blocchi_raw: list) -> list[dict]:
+    """
+    Converte una lista di blocchi testuali grezzi (già separati)
+    in una lista di dizionari personaggio.
+    Funzione interna usata da parse_file_multiplo.
+    """
     personaggi = []
     for blocco in blocchi_raw:
         righe = [r.strip() for r in blocco.strip().splitlines() if r.strip()]
         if not righe:
             continue
-
-        # Serve almeno nome + età + range + almeno una riga di descrizione
         if len(righe) < 4:
             personaggi.append({
                 "errore": f"Blocco incompleto (meno di 4 righe): «{righe}»"
@@ -294,8 +345,6 @@ def parse_file_multiplo(testo: str) -> list[dict]:
             continue
 
         nome_p = righe[0]
-
-        # Riga 2: età
         try:
             eta_p = int(righe[1])
         except ValueError:
@@ -304,10 +353,7 @@ def parse_file_multiplo(testo: str) -> list[dict]:
             })
             continue
 
-        # Riga 3: range anni — accetta "YYYY-YYYY", "YYYY" o "-" / vuoto
         anno_min_p, anno_max_p = _parse_range_anni(righe[2])
-
-        # Righe 4+: descrizione
         desc_raw = " ".join(righe[3:]).strip()
         desc_p   = desc_raw.strip('"').strip()
 
@@ -318,7 +364,6 @@ def parse_file_multiplo(testo: str) -> list[dict]:
             "anno_max":    anno_max_p,
             "descrizione": desc_p,
         })
-
     return personaggi
 
 
