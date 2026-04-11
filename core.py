@@ -16,6 +16,7 @@
 
 from __future__ import annotations  # compatibilità type hint su Python 3.7–3.9
 
+import os
 import re
 import random
 from datetime import datetime, date, timedelta
@@ -23,12 +24,20 @@ from typing import Optional
 from database import TRATTI_SEGNI, FINESTRE_SEGNI
 
 import spacy
-# 1. Caricamento del modello (assicurati di averlo scaricato)
-# Il modello "lg" (large) è necessario per avere i vettori di similarità
-try:
-    nlp = spacy.load("it_core_news_lg")
-except:
-    nlp = None
+# Caricamento del modello medium (assicurati di averlo scaricato)
+# Il modello "md" (medium) ha i vettori di similarità e pesa 40MB e non 500MB
+
+@st.cache_resource # Evita di ricaricare il modello a ogni interazione
+def load_nlp():
+    try:
+        # Tenta di caricare il modello
+        return spacy.load("it_core_news_md")
+    except OSError:
+        # Se non lo trova, lo scarica al volo
+        os.system("python -m spacy download it_core_news_md")
+        return spacy.load("it_core_news_md")
+
+nlp = load_nlp()
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
 
 def segno_da_descrizione(descrizione: str) -> tuple[str, list]:
