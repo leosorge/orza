@@ -47,7 +47,7 @@ def mostra_profilo(profilo: dict):
     """Renderizza un profilo astrologico nella UI Streamlit."""
     # --- PARTE FINALE TAB SINGOLO ---
     st.divider()
-        mostra_profilo(profilo)
+    mostra_profilo(profilo)
         
         testo_dettagliato = formatta_profilo_testo(profilo)
         data_f = profilo["data"].strftime("%d/%m/%Y")
