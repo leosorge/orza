@@ -40,6 +40,7 @@ DIZIONARIO_SEGNI = {
 }
 
 def analizza_descrizione(testo):
+    """Analisi statistica delle keyword: ritorna Top 3 e dettagli."""
     if not nlp: return [("Neutro", 0)], {}
     doc = nlp(testo.lower())
     punteggi = {s: 0 for s in DIZIONARIO_SEGNI}
@@ -51,40 +52,43 @@ def analizza_descrizione(testo):
             if t in keywords or l in keywords:
                 punteggi[segno] += 1
                 if t not in [x[0] for x in match_parole[segno]]:
-                    match_parole[segno].append((t, 1.0)) # Peso statistico base
+                    match_parole[segno].append((t, 1.0)) # Peso statistico
     
-    # Ordiniamo e prendiamo i top 3
+    # Ordiniamo e prendiamo i top 3 segni
     top3 = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)[:3]
     return top3, match_parole
 
 def genera_profilo(nome, eta, descrizione, a_min, a_max):
+    """Crea il dizionario profilo completo per l'interfaccia."""
     top3, dettagli = analizza_descrizione(descrizione)
     
     # Calcolo data
     anno_n = random.randint(a_min - eta, a_max - eta)
     data_n = datetime(anno_n, random.randint(1,12), random.randint(1,28))
     
-    # Liste per varietà estetica
-    ascendenti = list(DIZIONARIO_SEGNI.keys())
-    fasi = ["Giovinezza", "Maturità", "Luna Piena", "Luna Nuova", "Primo Quarto"]
-    case = [f"{n}ª Casa" for n in ["Prima", "Seconda", "Terza", "Quarta", "Quinta", "Sesta", "Settima"]]
+    # Variabili estetiche (CORRETTO "Seconda")
+    segni_tutti = list(DIZIONARIO_SEGNI.keys())
+    fasi = ["Luna Piena", "Luna Nuova", "Crescente", "Calante"]
+    case_lista = [f"{n}ª Casa" for n in ["Prima", "Seconda", "Terza", "Quarta", "Quinta", "Sesta", "Settima"]]
 
     return {
         "nome": nome, "eta": eta, "descrizione": descrizione,
         "anno_min": a_min, "anno_max": a_max,
         "data": data_n, "ora": f"{random.randint(0,23):02d}:{random.randint(0,59):02d}",
-        "segno": top3[0][0] if top3[0][1] > 0 else random.choice(ascendenti),
-        "ascendente": random.choice(ascendenti),
+        "segno": top3[0][0] if top3[0][1] > 0 else random.choice(segni_tutti),
+        "ascendente": random.choice(segni_tutti),
         "fase": random.choice(fasi),
-        "casa_dominante": random.choice(case),
+        "casa_dominante": random.choice(case_lista),
         "top3_segni": top3,
         "match_dettagli": dettagli
     }
 
 def formatta_profilo_testo(p):
-    return f"PROFILO ASTROLOGICO: {p['nome'].upper()}\nData: {p['data'].strftime('%d/%m/%Y')}\nSegno: {p['segno']}\n"
+    """Report testuale per download."""
+    return f"ORZA REPORT: {p['nome'].upper()}\nData: {p['data'].strftime('%d/%m/%Y')} | Segno: {p['segno']}\n"
 
 def genera_profili_da_file(testo, a1, a2):
+    """Parsing per blocchi multipli."""
     res = []
     for b in testo.split("==="):
         r = [l.strip() for l in b.strip().split("\n") if l.strip()]
