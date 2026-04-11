@@ -37,17 +37,16 @@ def load_nlp():
         # 1. Tenta il caricamento standard
         return spacy.load(model_name)
     except OSError:
-        # 2. Se fallisce, scarica usando l'eseguibile Python corrente
-        with st.spinner("Configurazione inizializzazione ORZA..."):
-            subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
+        # 2. Se manca, installiamo direttamente il pacchetto tramite l'URL ufficiale
+        with st.spinner("Inizializzazione motore semantico ORZA..."):
+            model_url = "https://github.com/explosion/spacy-models/releases/download/it_core_news_md-3.7.0/it_core_news_md-3.7.0-py3-none-any.whl"
+            # Usiamo pip install direttamente sull'URL del file .whl
+            subprocess.check_call([sys.executable, "-m", "pip", "install", model_url])
             
-            # 3. Forza il ricaricamento dei pacchetti per vedere il nuovo modello
-            import importlib
-            import it_core_news_md
-            importlib.reload(it_core_news_md)
-            return it_core_news_md.load()
+            # 3. Carichiamo il modello appena installato
+            return spacy.load(model_name)
 
-# Inizializzazione
+# Inizializzazione del modulo
 nlp = load_nlp()
 
 # ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
