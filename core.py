@@ -19,6 +19,7 @@ from __future__ import annotations  # compatibilità type hint su Python 3.7–3
 import os
 import re
 import random
+import streamlit as st  # <--- MANCAVA QUESTO
 from datetime import datetime, date, timedelta
 from typing import Optional
 from database import TRATTI_SEGNI, FINESTRE_SEGNI
