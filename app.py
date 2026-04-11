@@ -49,29 +49,29 @@ def mostra_profilo(profilo: dict):
     st.divider()
     mostra_profilo(profilo)
         
-        testo_dettagliato = formatta_profilo_testo(profilo)
-        data_f = profilo["data"].strftime("%d/%m/%Y")
-        testo_lista_singola = f"{profilo['nome']}, {data_f}"
+    testo_dettagliato = formatta_profilo_testo(profilo)
+    data_f = profilo["data"].strftime("%d/%m/%Y")
+    testo_lista_singola = f"{profilo['nome']}, {data_f}"
         
-        st.subheader("💾 Scarica Profilo")
-        col_s1, col_s2 = st.columns(2)
+    st.subheader("💾 Scarica Profilo")
+    col_s1, col_s2 = st.columns(2)
         
-        with col_s1:
-            st.download_button(
-                label="⬇️ Report Completo (.txt)",
-                data=testo_dettagliato,
-                file_name=f"{profilo['nome'].replace(' ', '_')}_dettaglio.txt",
-                mime="text/plain",
-                use_container_width=True,
-                key="dl_single_full"
-            )
+    with col_s1:
+        st.download_button(
+            label="⬇️ Report Completo (.txt)",
+            data=testo_dettagliato,
+            file_name=f"{profilo['nome'].replace(' ', '_')}_dettaglio.txt",
+            mime="text/plain",
+            use_container_width=True,
+            key="dl_single_full"
+        )
             
-        with col_s2:
-            st.download_button(
-                label="⬇️ Solo Nome e Data (.txt)",
-                data=testo_lista_singola,
-                file_name=f"{profilo['nome'].replace(' ', '_')}_data.txt",
-                mime="text/plain",
-                use_container_width=True,
-                key="dl_single_short"
-            )
+    with col_s2:
+        st.download_button(
+            label="⬇️ Solo Nome e Data (.txt)",
+            data=testo_lista_singola,
+            file_name=f"{profilo['nome'].replace(' ', '_')}_data.txt",
+            mime="text/plain",
+            use_container_width=True,
+            key="dl_single_short"
+        )
