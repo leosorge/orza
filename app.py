@@ -29,8 +29,12 @@ st.title("♈ Sistema Astrologico Inverso")
 st.caption(
     "Genera una data di nascita astrologicamente coerente a partire dalla "
     "descrizione del carattere, dall'età e dal periodo storico di riferimento. "
-    "— Esempio: *età 34, range 1880–1910, \"intensa, misteriosa, tenace\"* "
-    "→ Scorpione, nata il 14/11/1861."
+    '''Esempio di input: 
+    Elena Voss
+    34
+    1880–1910 (periodo nel quale ha 34 anni)
+    persona intensa, misteriosa, determinata e tenace, con un lato oscuro e passionale
+    '''
 )
 st.divider()
 
