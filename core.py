@@ -18,7 +18,6 @@ import spacy
 import random
 from datetime import datetime
 
-# Caricamento NLP
 try:
     nlp = spacy.load("it_core_news_sm")
 except:
@@ -40,62 +39,48 @@ DIZIONARIO_SEGNI = {
 }
 
 def analizza_descrizione(testo):
-    """Analisi statistica rinforzata."""
-    testo_clean = testo.lower()
-    punteggi = {s: 0 for s in DIZIONARIO_SEGNI}
-    match_parole = {s: [] for s in DIZIONARIO_SEGNI}
+    testo_low = testo.lower()
+    punteggi = {s: 0.0 for s in DIZIONARIO_SEGNI}
+    dettagli = {s: [] for s in DIZIONARIO_SEGNI}
 
-    # Metodo 1: Analisi NLP (Lemmi)
+    # Analisi incrociata NLP + Keyword matching diretto
+    parole_testo = set(testo_low.split())
     if nlp:
-        doc = nlp(testo_clean)
-        for token in doc:
-            t, l = token.text, token.lemma_
-            for segno, keywords in DIZIONARIO_SEGNI.items():
-                if t in keywords or l in keywords:
-                    punteggi[segno] += 1
-                    if t not in [x[0] for x in match_parole[segno]]:
-                        match_parole[segno].append((t, 1.0))
+        doc = nlp(testo_low)
+        parole_testo.update([t.lemma_ for t in doc])
 
-    # Metodo 2: Controllo diretto (Fallback se NLP è pigro)
     for segno, keywords in DIZIONARIO_SEGNI.items():
         for kw in keywords:
-            if kw in testo_clean and kw not in [x[0] for x in match_parole[segno]]:
-                punteggi[segno] += 0.5 # Peso minore per match testuale semplice
-                match_parole[segno].append((kw, 0.5))
+            if kw in parole_testo or kw in testo_low:
+                punteggi[segno] += 1.0
+                if kw not in dettagli[segno]:
+                    dettagli[segno].append(kw)
 
-    # Ordinamento
-    segni_ordinati = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)
-    
-    # Se il punteggio massimo è 0, evitiamo il "Neutro" e diamo un risultato casuale ma coerente
-    if segni_ordinati[0][1] == 0:
-        return [(random.choice(list(DIZIONARIO_SEGNI.keys())), 0.0)], match_parole
-        
-    return segni_ordinati[:3], match_parole
+    # Ordinamento Top 3
+    ordinati = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)
+    return ordinati[:3], dettagli
 
 def genera_profilo(nome, eta, descrizione, a_min, a_max):
-    top3, dettagli = analizza_descrizione(descrizione)
+    top3, match_dettagli = analizza_descrizione(descrizione)
     
     anno_n = random.randint(a_min - eta, a_max - eta)
     data_n = datetime(anno_n, random.randint(1,12), random.randint(1,28))
     
-    # CORREZIONE "SECONDAA": Uso numeri ordinali puliti
-    case_lista = ["1ª Casa", "2ª Casa", "3ª Casa", "4ª Casa", "5ª Casa", "6ª Casa", "7ª Casa", "8ª Casa", "9ª Casa", "10ª Casa", "11ª Casa", "12ª Casa"]
-    fasi = ["Luna Piena", "Luna Nuova", "Crescente", "Calante"]
+    # FIX REFUSO: Lista numerica per evitare "Seconda-a"
+    case = [f"{i}ª Casa" for i in range(1, 13)]
+    fasi = ["Giovinezza", "Maturità", "Luna Piena", "Luna Nuova", "Crescente"]
 
     return {
         "nome": nome, "eta": eta, "descrizione": descrizione,
-        "anno_min": a_min, "anno_max": a_max,
         "data": data_n, "ora": f"{random.randint(0,23):02d}:{random.randint(0,59):02d}",
-        "segno": top3[0][0],
+        "segno": top3[0][0] if top3[0][1] > 0 else "Pesci",
         "ascendente": random.choice(list(DIZIONARIO_SEGNI.keys())),
         "fase": random.choice(fasi),
-        "casa_dominante": random.choice(case_lista),
+        "casa_dominante": random.choice(case),
+        "anno_rif": a_max,
         "top3_segni": top3,
-        "match_dettagli": dettagli
+        "match_dettagli": match_dettagli
     }
-
-def formatta_profilo_testo(p):
-    return f"NOME: {p['nome']}\nDATA: {p['data'].strftime('%d/%m/%Y')}\nSEGNO: {p['segno']}\n"
 
 def genera_profili_da_file(testo, a1, a2):
     res = []
