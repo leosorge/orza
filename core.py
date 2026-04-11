@@ -20,45 +20,55 @@ import re
 import random
 from datetime import datetime, date, timedelta
 from typing import Optional
-
 from database import TRATTI_SEGNI, FINESTRE_SEGNI
 
+import spacy
+# 1. Caricamento del modello (assicurati di averlo scaricato)
+# Il modello "lg" (large) è necessario per avere i vettori di similarità
+try:
+    nlp = spacy.load("it_core_news_lg")
+except OSError:
+    # Fallback per evitare crash se il modello non è installato localmente
+    st.error("Modello spaCy 'it_core_news_lg' non trovato.")
 
-# ── 1. SEGNO SOLARE ───────────────────────────────────────────────────────────
+# ── 1. SEGNO SOLARE (VERSIONE SEMANTICA) ──────────────────────────────────────
 
 def segno_da_descrizione(descrizione: str) -> tuple[str, list]:
     """
-    Analizza la descrizione testuale del personaggio e restituisce
-    il segno zodiacale con il maggior numero di keyword corrispondenti.
-
-    Parametri
-    ---------
-    descrizione : str
-        Testo libero che descrive il carattere del personaggio.
-
-    Restituisce
-    -----------
-    segno : str
-        Nome del segno zodiacale dominante.
-    top3 : list
-        Lista dei primi 3 segni per punteggio (utile per debug/UI).
+    Analizza la descrizione usando spaCy per calcolare la similarità 
+    semantica tra il testo e i tratti distintivi dei segni.
     """
-    desc = descrizione.lower()
-    punteggi = {s: 0 for s in TRATTI_SEGNI}
+    # Trasformiamo la descrizione in un oggetto Doc di spaCy
+    doc_desc = nlp(descrizione.lower())
+    punteggi = {s: 0.0 for s in TRATTI_SEGNI}
 
     for segno, tratti in TRATTI_SEGNI.items():
+        score_segno = 0.0
         for tratto in tratti:
-            if tratto in desc:
-                punteggi[segno] += 1
+            # Creiamo il vettore per il tratto (es. "misterioso")
+            token_tratto = nlp(tratto)
+            
+            # Calcolo della similarità tra l'intera descrizione e la keyword
+            # .similarity restituisce un valore tra 0 e 1
+            sim = doc_desc.similarity(token_tratto)
+            
+            # Usiamo una soglia di attivazione: se la similarità è alta,
+            # aggiungiamo il valore al punteggio del segno
+            if sim > 0.6: 
+                score_segno += sim
+        
+        punteggi[segno] = round(score_segno, 2)
 
+    # Classifica i segni per punteggio
     top3 = sorted(punteggi.items(), key=lambda x: x[1], reverse=True)[:3]
 
-    # Se nessuna keyword corrisponde, fallback casuale
-    if max(punteggi.values()) == 0:
+    # Se il punteggio massimo è troppo basso (nessun match semantico utile)
+    # manteniamo il fallback casuale
+    if max(punteggi.values()) < 0.1:
         return random.choice(list(TRATTI_SEGNI.keys())), top3
 
-    return max(punteggi, key=punteggi.get), top3
-
+    # Restituisce il segno con il punteggio più alto
+    return top3[0][0], top3
 
 # ── 2. DATA DI NASCITA ────────────────────────────────────────────────────────
 
