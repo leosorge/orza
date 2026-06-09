@@ -2,7 +2,7 @@
 
 Genera una **data di nascita astrologicamente coerente** a partire dalla descrizione del carattere di un personaggio, dalla sua età e dal periodo storico in cui vive.
 
-Utile per la costruzione di personaggi in narrativa, giochi di ruolo, ambientazioni storiche o fantastiche.
+Utile per la costruzione di personaggi in narrativa, giochi di ruolo, ambientazioni storiche o fantastiche. Da provare!
 
 ## Come funziona
 
